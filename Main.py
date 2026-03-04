@@ -1,6 +1,15 @@
-def start_game():
-    return chessboard
+from deck import Deck   # 🔥 importerar Deck från deck.py
 
-def 
 
-chessboard = [[" " for _ in range(8)] for _ in range(8)]
+def main():
+    deck = Deck.create_starting_deck()
+
+    print("Drar 3 kort:")
+    for _ in range(3):
+        card = deck.draw_card()
+        if card:
+            print(card)
+
+
+if __name__ == "__main__":
+    main()
