@@ -6,6 +6,7 @@ class Player:
         self.hp = 30
         self.block = 0
         self.energy = 3
+        self.max_energy = 3  # <-- lägg till här
         self.deck = deck
         self.hand = []
 

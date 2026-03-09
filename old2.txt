@@ -1,0 +1,76 @@
+import pygame
+import sys
+from main import run_game
+from game_ui import run_pygame_game
+from player import Player
+from enemy import Enemy
+
+
+pygame.init()
+info = pygame.display.Info()
+WIDTH, HEIGHT = info.current_w, info.current_h
+screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN)
+
+font = pygame.font.SysFont(None, 48)  # <--- här definieras font
+
+font_title = pygame.font.SysFont(None, 80)
+font_button = pygame.font.SysFont(None, 40)
+
+clock = pygame.time.Clock()
+
+
+class Button:
+    def __init__(self, text, x, y, w, h):
+        self.text = text
+        self.rect = pygame.Rect(x, y, w, h)
+
+    def draw(self):
+        pygame.draw.rect(screen, (70, 70, 70), self.rect)
+        pygame.draw.rect(screen, (200, 200, 200), self.rect, 2)
+
+        text_surface = font_button.render(self.text, True, (255, 255, 255))
+        text_rect = text_surface.get_rect(center=self.rect.center)
+
+        screen.blit(text_surface, text_rect)
+
+    def is_clicked(self, pos):
+        return self.rect.collidepoint(pos)
+
+
+start_button = Button("Start Game", WIDTH//2 - 100, 300, 200, 60)
+quit_button = Button("Quit", WIDTH//2 - 100, 400, 200, 60)
+
+
+
+def start_screen():
+    running = True
+    while running:
+        screen.fill((0, 0, 0))
+        title = font.render("Card Roguelike - Press Enter to Start", True, (255,255,255))
+        screen.blit(title, (WIDTH//2 - title.get_width()//2, HEIGHT//2))
+        pygame.display.flip()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    running = False  # avslutar startskärmen
+                if event.key == pygame.K_ESCAPE:
+                    pygame.quit()
+                    sys.exit()  # kör spelet först efter startskärmen
+
+        pygame.display.flip()
+        clock.tick(60)
+
+
+if __name__ == "__main__":
+    start_screen()
+    player = Player()
+
+    enemies = [
+        Enemy("Goblin", 30),
+        Enemy("Slime", 25)
+        ]
+
+    run_pygame_game(player, enemies)
