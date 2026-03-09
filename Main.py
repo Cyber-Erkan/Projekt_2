@@ -1,4 +1,5 @@
 import msvcrt
+from os import system
 from deck import Deck
 from player import Player
 from enemy import Enemy
@@ -78,7 +79,7 @@ def run_game():
         if all_enemies_dead(enemies):
             next_level()
             return
-
+        system("cls")  # rensa skärmen
         print("\n--- Din tur ---")
 
         player.start_turn()

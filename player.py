@@ -55,7 +55,7 @@ class Player:
 
             for i, enemy in enumerate(alive_enemies):
                 print(f"{i+1}: {enemy.name} (HP {enemy.hp})")
-
+            
             choice = int(input("> ")) - 1
             target = alive_enemies[choice]
 
