@@ -4,12 +4,11 @@ from main import run_game
 from game_ui import run_pygame_game
 
 pygame.init()
+info = pygame.display.Info()
+WIDTH, HEIGHT = info.current_w, info.current_h
+screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN)
 
-WIDTH = 900
-HEIGHT = 600
-
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Card Roguelike")
+font = pygame.font.SysFont(None, 48)  # <--- här definieras font
 
 font_title = pygame.font.SysFont(None, 80)
 font_button = pygame.font.SysFont(None, 40)
@@ -40,33 +39,22 @@ quit_button = Button("Quit", WIDTH//2 - 100, 400, 200, 60)
 
 
 def start_screen():
-
-    while True:
-
-        screen.fill((30, 30, 40))
-
-        title = font_title.render("Card Roguelike", True, (255, 255, 255))
-        title_rect = title.get_rect(center=(WIDTH//2, 150))
-
-        screen.blit(title, title_rect)
-
-        start_button.draw()
-        quit_button.draw()
-
+    running = True
+    while running:
+        screen.fill((0, 0, 0))
+        title = font.render("Card Roguelike - Press Enter to Start", True, (255,255,255))
+        screen.blit(title, (WIDTH//2 - title.get_width()//2, HEIGHT//2))
+        pygame.display.flip()
         for event in pygame.event.get():
-
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-
-            if event.type == pygame.MOUSEBUTTONDOWN:
-
-                if start_button.is_clicked(event.pos):
-                    run_pygame_game()  # startar ert spel
-
-                if quit_button.is_clicked(event.pos):
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    running = False  # avslutar startskärmen
+                if event.key == pygame.K_ESCAPE:
                     pygame.quit()
-                    sys.exit()
+                    sys.exit()  # kör spelet först efter startskärmen
 
         pygame.display.flip()
         clock.tick(60)
@@ -74,3 +62,4 @@ def start_screen():
 
 if __name__ == "__main__":
     start_screen()
+    run_pygame_game()

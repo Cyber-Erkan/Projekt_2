@@ -5,8 +5,11 @@ from enemy import Enemy
 
 pygame.init()
 
-WIDTH, HEIGHT = 1000, 700
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
+# ----- Fullscreen setup -----
+info = pygame.display.Info()
+WIDTH, HEIGHT = info.current_w, info.current_h
+screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN)
+pygame.display.set_caption("Card Roguelike")
 font = pygame.font.SysFont(None, 28)
 clock = pygame.time.Clock()
 
@@ -18,7 +21,6 @@ class CardUI:
         self.rect = pygame.Rect(x, y, self.WIDTH, self.HEIGHT)
 
     def draw(self):
-        # hover-effekt
         draw_rect = self.rect.copy()
         if self.rect.collidepoint(pygame.mouse.get_pos()):
             draw_rect.y -= 20
@@ -28,7 +30,6 @@ class CardUI:
         y_offset = 10
         screen.blit(font.render(self.card.name, True, (0,0,0)), (draw_rect.x + 10, draw_rect.y + y_offset))
         y_offset += 40
-
         if self.card.attack > 0:
             screen.blit(font.render(f"ATK: {self.card.attack}", True, (0,0,0)), (draw_rect.x + 10, draw_rect.y + y_offset))
             y_offset += 25
@@ -65,7 +66,8 @@ class EnemyUI:
             elif action == "buff":
                 text = f"💪 +{value}"
             text_surface = font.render(text, True, (255,255,0))
-            screen.blit(text_surface, (self.rect.x, self.rect.y - 60))
+            text_rect = text_surface.get_rect(center=(self.rect.centerx, self.rect.y - 20))
+            screen.blit(text_surface, text_rect)
 
 class Button:
     def __init__(self, text, x, y, w, h):
@@ -82,8 +84,8 @@ class Button:
 # ----- Hjälpfunktioner -----
 def draw_hand(player):
     card_uis = []
-    start_x = 50
-    spacing = 140
+    start_x = WIDTH * 0.05
+    spacing = WIDTH * 0.14
     y = HEIGHT - 200
     for i, card in enumerate(player.hand):
         card_ui = CardUI(card, start_x + i*spacing, y)
@@ -93,9 +95,9 @@ def draw_hand(player):
 
 def draw_enemies(enemies):
     enemy_uis = []
-    start_x = 300
-    spacing = 200
-    y = 150
+    start_x = WIDTH * 0.3
+    spacing = WIDTH * 0.25
+    y = HEIGHT * 0.2
     for i, enemy in enumerate(enemies):
         enemy_ui = EnemyUI(enemy, start_x + i*spacing, y)
         enemy_ui.draw()
@@ -121,6 +123,7 @@ def run_pygame_game():
     player = Player(deck)
     enemies = [Enemy("Goblin", 20, 5), Enemy("Slime", 15, 4)]
     for e in enemies:
+        e.max_hp = e.hp  # lägg till max_hp dynamiskt
         e.choose_intent()
     player.draw_hand(5)
 
@@ -138,9 +141,14 @@ def run_pygame_game():
         clock.tick(60)
 
         for event in pygame.event.get():
+            # ESC eller stäng
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    pygame.quit()
+                    sys.exit()
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_pos = pygame.mouse.get_pos()
@@ -152,7 +160,6 @@ def run_pygame_game():
                     player.start_turn()
                     for e in enemies:
                         e.choose_intent()
-                    # fiender agerar
                     for e in enemies:
                         e.act(player)
                     continue
