@@ -48,7 +48,7 @@ def end_turn(player, enemies):
     enemy_turn(enemies, player)
 
 
-def start_game():
+def run_game():
 
     deck = Deck.create_starting_deck()
     player = Player(deck)
@@ -111,7 +111,7 @@ def start_game():
 def main():
 
     while True:
-        start_game()
+        run_game()
 
 
 if __name__ == "__main__":

@@ -1,3 +1,5 @@
+from cards import Card
+
 class Player:
     def __init__(self, deck):
         self.max_hp = 30

@@ -55,8 +55,8 @@ class Deck:
             print(card)
 
 
-def draw_size(self):
-    return len(self.draw_pile)
+    def draw_size(self):
+        return len(self.draw_pile)
 
     @staticmethod
     def create_starting_deck():
