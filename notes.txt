@@ -4,3 +4,7 @@ kolla igenom enemy intent (verkar vara broken)
 fixa egna enemies
 fixa energy system
 ha en try-loop när man ska starta om
+
+
+
+pygame:  py -m pip install -U pygame --user
