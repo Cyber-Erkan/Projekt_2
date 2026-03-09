@@ -8,3 +8,4 @@ ha en try-loop när man ska starta om
 
 
 pygame:  py -m pip install -U pygame --user
+Launch: python ui.py
