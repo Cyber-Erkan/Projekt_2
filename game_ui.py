@@ -236,7 +236,47 @@ def draw_player_ui(player):
     energy = font.render(f"ENERGY {player.energy}",True,(255,255,255))
     screen.blit(energy,(40,HEIGHT-30))
 
+# ---------------- STAGE SYSTEM ----------------
 
+def all_enemies_dead(enemies):
+
+    for e in enemies:
+        if e.is_alive():
+            return False
+
+    return True
+
+
+def start_next_stage(stage):
+
+    if stage == 1:
+
+        enemies = [
+            Enemy("Goblin",20,5),
+            Enemy("Slime",15,4)
+        ]
+
+    elif stage == 2:
+
+        enemies = [
+            Enemy("Goblin",25,6),
+            Enemy("Goblin",25,6)
+        ]
+
+    elif stage == 3:
+
+        enemies = [
+            Enemy("Slime",35,8)
+        ]
+
+    else:
+
+        enemies = [
+            Enemy("Goblin",30,7),
+            Enemy("Slime",30,7)
+        ]
+
+    return enemies
 
 # ---------------- GAME LOOP ----------------
 
@@ -246,10 +286,9 @@ def run_pygame_game():
 
     player = Player(deck)
 
-    enemies = [
-        Enemy("Goblin",20,5),
-        Enemy("Slime",15,4)
-    ]
+    stage = 1
+
+    enemies = start_next_stage(stage)
 
     player.draw_hand(5)
 
@@ -258,10 +297,16 @@ def run_pygame_game():
 
     card_uis = [CardUI(c) for c in player.hand]
 
-    enemy_uis = [
-        EnemyUI(enemies[0],WIDTH/2-200,200),
-        EnemyUI(enemies[1],WIDTH/2+80,200)
-    ]
+    enemy_uis = []
+
+    spacing = 200
+    start_x = WIDTH/2 - (len(enemies)-1)*spacing/2
+
+    for i,e in enumerate(enemies):
+
+        enemy_uis.append(
+            EnemyUI(e, start_x + i*spacing, 200)
+        )
 
     end_button = Button(WIDTH-200,HEIGHT-100,150,50,"END TURN")
     exit_button = Button(WIDTH-140,20,120,40,"EXIT")
@@ -276,8 +321,30 @@ def run_pygame_game():
         mouse = pygame.mouse.get_pos()
 
         screen.fill((40,40,40))
+        stage_text = font.render(f"Stage {stage}", True, (255,255,255))
+        screen.blit(stage_text, (WIDTH/2-50, 30))
+        # CHECK IF ALL ENEMIES ARE DEAD
 
-        # GAME OVER
+        if all_enemies_dead(enemies):
+
+            stage += 1
+
+            enemies = start_next_stage(stage)
+
+            enemy_uis = []
+
+            spacing = 200
+            start_x = WIDTH/2 - (len(enemies)-1)*spacing/2
+
+            for i,e in enumerate(enemies):
+
+                enemy_uis.append(
+                    EnemyUI(e, start_x + i*spacing, 200)
+                )
+
+            for e in enemies:
+                e.choose_intent()
+            # GAME OVER
 
         if player.hp <= 0:
 
@@ -322,7 +389,7 @@ def run_pygame_game():
 
         for e in enemy_uis:
             e.draw()
-
+        
         draw_player_ui(player)
 
         end_button.draw()
@@ -374,7 +441,7 @@ def run_pygame_game():
                     selected_card_ui = None
 
                     continue
-
+                
                 # PLAY CARDS
 
                 for card in card_uis:

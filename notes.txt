@@ -17,6 +17,7 @@ bakgrunder
 Enemy sprites - temporärt fixat
 Select kort
 Visa HP
+fixa symbol för energi
 ----------------
 Info:
 pygame:  py -m pip install -U pygame --user
