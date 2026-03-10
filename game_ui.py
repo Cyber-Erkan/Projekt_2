@@ -1,345 +1,281 @@
 import pygame
 import sys
 import math
+from deck import Deck
 from player import Player
 from enemy import Enemy
 
 pygame.init()
-info = pygame.display.Info()
-WIDTH, HEIGHT = info.current_w, info.current_h
-screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN | pygame.SCALED)
-pygame.display.set_caption("Card Game")
-clock = pygame.time.Clock()
-font = pygame.font.SysFont(None, 28)
-big_font = pygame.font.SysFont(None, 60)
 
-# -------------------
-# BUTTON CLASS
-# -------------------
+# --- Screen Setup ---
+# WIDTH, HEIGHT = (4096, 4096)
+ENEMY_SIZE = (128, 128)
+screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+WIDTH, HEIGHT = screen.get_size()
+font = pygame.font.SysFont("arial", 24)
+big_font = pygame.font.SysFont("arial", 60)
+clock = pygame.time.Clock()
+
+# --- Button Class ---
 class Button:
     def __init__(self, x, y, w, h, text):
         self.rect = pygame.Rect(x, y, w, h)
         self.text = text
 
     def draw(self):
-        pygame.draw.rect(screen, (70,70,70), self.rect)
-        pygame.draw.rect(screen, (255,255,255), self.rect, 2)
-        txt = font.render(self.text, True, (255,255,255))
-        screen.blit(txt, txt.get_rect(center=self.rect.center))
+        pygame.draw.rect(screen, (220,220,220), self.rect)
+        pygame.draw.rect(screen, (0,0,0), self.rect, 2)
+        text_surf = font.render(self.text, True, (0,0,0))
+        screen.blit(text_surf, (self.rect.x + 10, self.rect.y + 10))
 
-    def is_clicked(self, pos):
+    def clicked(self, pos):
         return self.rect.collidepoint(pos)
 
-# -------------------
-# ANIMATION CLASSES
-# -------------------
-class CardAnimation:
-    def __init__(self, start_x, start_y, target_x, target_y):
-        self.x = start_x
-        self.y = start_y
-        self.tx = target_x
-        self.ty = target_y
-        self.finished = False
-
-    def update(self):
-        dx = self.tx - self.x
-        dy = self.ty - self.y
-        self.x += dx * 0.2
-        self.y += dy * 0.2
-        if abs(dx) < 5 and abs(dy) < 5:
-            self.finished = True
-
-    def draw(self):
-        pygame.draw.rect(screen, (255,255,255), (self.x, self.y, 40, 60))
-
-class EnemyAttackAnimation:
-    def __init__(self, enemy_ui):
-        self.enemy_ui = enemy_ui
-        self.start_y = enemy_ui.rect.y
-        self.x = enemy_ui.rect.x
-        self.y = enemy_ui.rect.y
-        self.phase = 0
-        self.finished = False
-
-    def update(self):
-        if self.phase == 0:
-            self.y += 12
-            if self.y >= self.start_y + 80:
-                self.phase = 1
-        elif self.phase == 1:
-            self.y -= 12
-            if self.y <= self.start_y:
-                self.phase = 2
-                self.finished = True
-
-    def draw(self):
-        pygame.draw.rect(screen, (200,50,50), (self.x, self.y, self.enemy_ui.rect.width, self.enemy_ui.rect.height))
-
-class DamageText:
-    def __init__(self, x, y, value):
-        self.x = x
-        self.y = y
-        self.value = value
-        self.timer = 60
-
-    def update(self):
-        self.y -= 1
-        self.timer -= 1
-
-    def draw(self):
-        text = font.render(str(self.value), True, (255,80,80))
-        screen.blit(text, (self.x, self.y))
-
-# -------------------
-# CARD UI
-# -------------------
+# --- Card UI Class ---
 class CardUI:
-    WIDTH = 100
-    HEIGHT = 150
     def __init__(self, card):
         self.card = card
-        self.rect = pygame.Rect(0,0,self.WIDTH,self.HEIGHT)
-
-    def draw(self, hover=False):
-        scale = 1.25 if hover else 1
-        w = int(self.WIDTH*scale)
-        h = int(self.HEIGHT*scale)
-        rect = pygame.Rect(self.rect.centerx-w//2, self.rect.centery-h//2, w, h)
-        pygame.draw.rect(screen, (230,230,230), rect)
-        pygame.draw.rect(screen, (0,0,0), rect, 2)
-        y_off = rect.y + 10
-        name = font.render(self.card.name, True, (0,0,0))
-        screen.blit(name, (rect.x+10, y_off))
-        y_off += 30
-        if self.card.attack>0:
-            screen.blit(font.render(f"ATK: {self.card.attack}", True, (0,0,0)), (rect.x+10, y_off))
-            y_off += 25
-        if self.card.block>0:
-            screen.blit(font.render(f"BLK: {self.card.block}", True, (0,0,0)), (rect.x+10, y_off))
-            y_off += 25
-        if self.card.heal>0:
-            screen.blit(font.render(f"HEAL: {self.card.heal}", True, (0,0,0)), (rect.x+10, y_off))
-        cost = font.render(f"COST: {self.card.cost}", True, (0,0,0))
-        screen.blit(cost, (rect.x+10, rect.y+rect.height-25))
-
-# -------------------
-# ENEMY UI
-# -------------------
-class EnemyUI:
-    WIDTH = 120
-    HEIGHT = 120
-    def __init__(self, enemy, x, y):
-        self.enemy = enemy
-        self.rect = pygame.Rect(x, y, self.WIDTH, self.HEIGHT)
-        self.flash_timer = 0
-        self.last_hp = enemy.hp
+        self.x = WIDTH/2
+        self.y = HEIGHT + 200
+        self.target_x = self.x
+        self.target_y = HEIGHT - 200
+        self.rect = pygame.Rect(self.x, self.y, 120, 160)
+        self.selected = False
 
     def update(self):
-        if self.enemy.hp < self.last_hp:
-            self.flash_timer = 10
-        if self.flash_timer>0:
-            self.flash_timer -=1
-        self.last_hp = self.enemy.hp
+        self.x += (self.target_x - self.x) * 0.2
+        self.y += (self.target_y - self.y) * 0.2
+        self.rect.x = self.x
+        self.rect.y = self.y
 
     def draw(self):
-        color = (255,80,80) if self.flash_timer>0 else (180,80,80)
+        color = (240,240,240)
+        if self.selected:
+            color = (180, 220, 240)
         pygame.draw.rect(screen, color, self.rect)
-        hp_ratio = max(self.enemy.hp,0)/self.enemy.max_hp
-        pygame.draw.rect(screen, (60,60,60), (self.rect.x,self.rect.y-20,120,10))
-        pygame.draw.rect(screen, (200,50,50), (self.rect.x,self.rect.y-20,120*hp_ratio,10))
+        pygame.draw.rect(screen, (0,0,0), self.rect, 2)
+        y_offset = 10
+        name = font.render(self.card.name, True, (0,0,0))
+        screen.blit(name, (self.rect.x + 10, self.rect.y + y_offset))
+        y_offset += 30
+        if self.card.attack > 0:
+            atk = font.render(f"ATK {self.card.attack}", True, (0,0,0))
+            screen.blit(atk, (self.rect.x + 10, self.rect.y + y_offset))
+            y_offset += 25
+        if self.card.block > 0:
+            blk = font.render(f"BLK {self.card.block}", True, (0,0,0))
+            screen.blit(blk, (self.rect.x + 10, self.rect.y + y_offset))
+            y_offset += 25
+        if self.card.heal > 0:
+            heal = font.render(f"HEAL {self.card.heal}", True, (0,0,0))
+            screen.blit(heal, (self.rect.x + 10, self.rect.y + y_offset))
+        cost = font.render(str(self.card.cost), True, (0,0,0))
+        screen.blit(cost, (self.rect.right - 25, self.rect.y + 10))
 
-# -------------------
-# HAND LAYOUT
-# -------------------
+# --- Enemy UI Class ---
+class EnemyUI:
+    def __init__(self, enemy, x, y):
+
+        self.enemy = enemy
+        self.rect = pygame.Rect(x, y, 120, 120)
+
+        self.flash = 0
+        self.offset = 0
+
+        # Load sprite
+        if enemy.name.lower() == "goblin":
+            self.img = pygame.image.load("assets/goblin.png").convert_alpha()
+            self.img = pygame.transform.scale(self.img, ENEMY_SIZE)
+        elif enemy.name.lower() == "slime":
+            self.img = pygame.image.load("assets/slime.png").convert_alpha()
+            self.img = pygame.transform.scale(self.img, ENEMY_SIZE)
+        else:
+            self.img = None
+
+    def draw(self):
+        color = (200,60,60)
+        if self.flash > 0:
+            color = (255,255,255)
+            self.flash -= 1
+        # pygame.draw.rect(screen, color, (self.rect.x, self.rect.y + self.offset, 120, 120))
+        if self.img:
+            screen.blit(self.img, (self.rect.x, self.rect.y + self.offset))
+        else:
+            pygame.draw.rect(screen, color, (self.rect.x, self.rect.y + self.offset, 120, 120))
+        # HP bar
+        hp_ratio = max(0, self.enemy.hp) / self.enemy.max_hp
+        pygame.draw.rect(screen, (255,0,0), (self.rect.x, self.rect.y - 20, 120, 10))
+        pygame.draw.rect(screen, (0,255,0), (self.rect.x, self.rect.y - 20, 120 * hp_ratio, 10))
+        # Name
+        name = font.render(self.enemy.name, True, (255,255,255))
+        screen.blit(name, (self.rect.x, self.rect.y + 40))
+        # Intent
+        if self.enemy.intent:
+            action, value = self.enemy.intent
+            text = "ATK "+str(value) if action=="attack" else "BUFF "+str(value)
+            intent = font.render(text, True, (255,255,0))
+            screen.blit(intent, (self.rect.x, self.rect.y - 45))
+
+# --- Layout Hand Function ---
 def layout_hand(card_uis):
-    count = len(card_uis)
-    center_x = WIDTH//2
-    center_y = HEIGHT-120
-    spread = 40
-    for i, card_ui in enumerate(card_uis):
-        angle = (i-(count-1)/2)*spread
+    n = len(card_uis)
+    if n == 0:
+        return
+    radius = 600
+    center_x = WIDTH / 2
+    center_y = HEIGHT + 300
+    start = -40
+    end = 40
+    angles = [start + i * (end-start)/(n-1) for i in range(n)] if n>1 else [0]
+    for card, angle in zip(card_uis, angles):
         rad = math.radians(angle)
-        x = center_x + math.sin(rad)*400
-        y = center_y - math.cos(rad)*80
-        card_ui.rect.center = (x, y)
+        card.target_x = center_x + radius * math.sin(rad)
+        card.target_y = center_y - radius * math.cos(rad)
 
-# -------------------
-# PLAYER UI
-# -------------------
+# --- Player UI ---
 def draw_player_ui(player):
-    hp_ratio = max(player.hp,0)/player.max_hp
-    pygame.draw.rect(screen,(80,80,80),(40,HEIGHT-200,300,25))
-    pygame.draw.rect(screen,(200,50,50),(40,HEIGHT-200,300*hp_ratio,25))
-    screen.blit(font.render(f"HP {max(player.hp,0)}/{player.max_hp}",True,(255,255,255)),(40,HEIGHT-230))
-    energy_ratio = player.energy/player.max_energy
-    pygame.draw.rect(screen,(80,80,80),(40,HEIGHT-160,300,20))
-    pygame.draw.rect(screen,(80,200,255),(40,HEIGHT-160,300*energy_ratio,20))
-    screen.blit(font.render(f"Energy {player.energy}",True,(255,255,255)),(40,HEIGHT-185))
-    block_ratio = min(player.block/player.max_hp,1)
-    pygame.draw.rect(screen,(80,80,80),(40,HEIGHT-130,300,20))
-    pygame.draw.rect(screen,(120,180,255),(40,HEIGHT-130,300*block_ratio,20))
-    screen.blit(font.render(f"Block {player.block}",True,(255,255,255)),(40,HEIGHT-155))
+    # HP
+    hp_ratio = max(0, player.hp)/player.max_hp
+    pygame.draw.rect(screen, (255,0,0), (40, HEIGHT-80, 200, 20))
+    pygame.draw.rect(screen, (0,255,0), (40, HEIGHT-80, 200*hp_ratio, 20))
+    hp_text = font.render(f"HP {max(0, player.hp)}", True, (255,255,255))
+    screen.blit(hp_text, (40, HEIGHT-110))
+    # Block
+    block_text = font.render(f"BLOCK {player.block}", True, (200,200,255))
+    screen.blit(block_text, (260, HEIGHT-80))
+    # Energy
+    energy_ratio = player.energy / player.max_energy
+    pygame.draw.rect(screen, (0,0,0), (40, HEIGHT-50, 200, 15))
+    pygame.draw.rect(screen, (0,150,255), (40, HEIGHT-50, 200*energy_ratio, 15))
+    energy_text = font.render(f"ENERGY {player.energy}", True, (255,255,255))
+    screen.blit(energy_text, (40, HEIGHT-30))
 
-# -------------------
-# RUN GAME
-# -------------------
-def run_pygame_game(player,enemies):
-    card_animations = []
-    enemy_attacks = []
-    damage_texts = []
-
-    if len(player.hand)==0:
-        player.draw_hand(5)
-
-    card_uis = [CardUI(c) for c in player.hand]
-    enemy_uis = []
-    for i,e in enumerate(enemies):
-        x = WIDTH//2 + i*200 - 100
-        y = HEIGHT//3
-        e.ui = EnemyUI(e,x,y)
-        enemy_uis.append(e.ui)
-        e.next_intent = None
-        e.base_attack = e.attack
-        e.max_hp = e.hp
+# --- Run Game ---
+def run_pygame_game():
+    deck = Deck.create_starting_deck()
+    player = Player(deck)
+    enemies = [Enemy("Goblin", 20, 5), Enemy("Slime", 15, 4)]
+    player.draw_hand(5)
+    for e in enemies:
         e.choose_intent()
 
-    end_turn_btn = Button(WIDTH-200, HEIGHT-120, 160,60, "End Turn")
-    exit_btn = Button(WIDTH-100, 20, 80,40, "Exit")
-    retry_btn = Button(WIDTH//2-80, HEIGHT//2+50, 160,50, "Retry")
+    card_uis = [CardUI(c) for c in player.hand]
+    enemy_uis = [EnemyUI(enemies[0], WIDTH/2-200, 200), EnemyUI(enemies[1], WIDTH/2+80, 200)]
 
-    selected_card = None
-    targeting_enemy = False
-    turn_ended = False
+    end_button = Button(WIDTH-200, HEIGHT-100, 150,50,"END TURN")
+    exit_button = Button(WIDTH-140,20,120,40,"EXIT")
+    menu_button = Button(WIDTH/2-100, HEIGHT/2,200,60,"MAIN MENU")
+
+    selected_card_ui = None
     running = True
 
     while running:
         mouse = pygame.mouse.get_pos()
-        screen.fill((30,30,40))
+        screen.fill((40,40,40))
 
-        # EVENTS
-        for event in pygame.event.get():
-            if event.type==pygame.QUIT:
-                pygame.quit(); sys.exit()
-            if event.type==pygame.KEYDOWN and event.key==pygame.K_ESCAPE:
-                pygame.quit(); sys.exit()
-            if event.type==pygame.MOUSEBUTTONDOWN:
-                if exit_btn.is_clicked(mouse):
-                    pygame.quit(); sys.exit()
-                if player.hp<=0 and retry_btn.is_clicked(mouse):
-                    player.hp = player.max_hp
-                    player.energy = player.max_energy
-                    player.block = 0
-                    player.hand = []
-                    player.deck = player.deck.create_starting_deck()
-                    for e in enemies:
-                        e.hp = e.max_hp
-                        e.attack = e.base_attack
-                        e.choose_intent()
-                    return
-                if end_turn_btn.is_clicked(mouse) and player.hp>0:
-                    turn_ended = True
+        # --- Game Over ---
+        if player.hp <= 0:
+            text = big_font.render("GAME OVER", True, (255,0,0))
+            screen.blit(text, (WIDTH/2-200, HEIGHT/2-150))
+            menu_button.draw()
+            exit_button.draw()
+            for event in pygame.event.get():
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if menu_button.clicked(mouse):
+                        import ui  # importera först när det behövs
+                        ui.start_screen_fullscreen()  # starta start screen med fullscreen
+                        return
+                    if exit_button.clicked(mouse):
+                        pygame.quit()
+                        sys.exit()
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+            pygame.display.update()
+            clock.tick(60)
+            continue
 
-                # CARD CLICK
-                if player.hp>0 and not targeting_enemy:
-                    for i,cu in enumerate(card_uis):
-                        if cu.rect.collidepoint(mouse) and player.energy>=cu.card.cost:
-                            card = player.hand[i]
-                            if card.attack>0:
-                                selected_card = i
-                                targeting_enemy = True
-                            elif card.block>0:
-                                player.block += card.block
-                                player.energy -= card.cost
-                                player.deck.discard_card(card)
-                                player.hand.pop(i)
-                                card_uis.pop(i)
-                            elif card.heal>0:
-                                player.hp = min(player.max_hp, player.hp + card.heal)
-                                player.energy -= card.cost
-                                player.deck.discard_card(card)
-                                player.hand.pop(i)
-                                card_uis.pop(i)
-                            break
-                elif player.hp>0 and targeting_enemy:
-                    for eui in enemy_uis:
-                        if eui.rect.collidepoint(mouse):
-                            card = player.hand[selected_card]
-                            e = eui.enemy
-                            e.hp -= card.attack
-                            damage_texts.append(DamageText(eui.rect.centerx,eui.rect.y,card.attack))
-                            card_animations.append(CardAnimation(cu.rect.centerx,cu.rect.centery,eui.rect.centerx,eui.rect.centery))
-                            player.energy -= card.cost
-                            player.deck.discard_card(card)
-                            player.hand.pop(selected_card)
-                            card_uis.pop(selected_card)
-                            selected_card = None
-                            targeting_enemy = False
-                            break
-
-        # END TURN
-        if turn_ended:
-            for e in enemies:
-                if e.hp>0:
-                    enemy_attacks.append(EnemyAttackAnimation(e.ui))
-                    e.act(player)
-                    e.choose_intent()
-            player.draw_hand(5)
-            card_uis = [CardUI(c) for c in player.hand]
-            player.block = 0
-            player.start_turn()
-            turn_ended = False
-
-        # DRAW
-        for eui in enemy_uis:
-            eui.update()
-            eui.draw()
-            # Intent
-            if hasattr(eui.enemy,'next_intent') and eui.enemy.next_intent:
-                action,value = eui.enemy.next_intent
-                intent_text = f"ATK {value}" if action=="attack" else f"BUFF {value}"
-                screen.blit(font.render(intent_text,True,(255,255,0)), (eui.rect.x, eui.rect.y-50))
-
-        for anim in card_animations:
-            anim.update()
-            anim.draw()
-        card_animations[:] = [a for a in card_animations if not a.finished]
-        for atk in enemy_attacks:
-            atk.update()
-            atk.draw()
-        enemy_attacks[:] = [a for a in enemy_attacks if not a.finished]
-        for dmg in damage_texts:
-            dmg.update()
-            dmg.draw()
-        damage_texts[:] = [d for d in damage_texts if d.timer>0]
-
+        # --- Layout Hand ---
         layout_hand(card_uis)
-        for cu in card_uis:
-            hover = cu.rect.collidepoint(mouse)
-            cu.draw(hover)
 
+        # --- Draw Cards ---
+        for card in card_uis:
+            if card.rect.collidepoint(mouse):
+                card.target_y -= 40
+            card.update()
+            card.draw()
+
+        # --- Draw Enemies ---
+        for e in enemy_uis:
+            e.draw()
+
+        # --- Draw Player UI ---
         draw_player_ui(player)
-        end_turn_btn.draw()
-        exit_btn.draw()
+        end_button.draw()
+        exit_button.draw()
 
-        # GAME OVER
-        if player.hp<=0:
-            overlay = pygame.Surface((WIDTH,HEIGHT))
-            overlay.set_alpha(200)
-            overlay.fill((0,0,0))
-            screen.blit(overlay,(0,0))
-            screen.blit(big_font.render("GAME OVER",True,(255,0,0)),(WIDTH//2-180,HEIGHT//2-100))
-            retry_btn.draw()
-            exit_btn.draw()
+        # --- Events ---
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    pygame.quit()
+                    sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
 
-        # VICTORY
-        if all(e.hp<=0 for e in enemies):
-            overlay = pygame.Surface((WIDTH,HEIGHT))
-            overlay.set_alpha(160)
-            overlay.fill((0,0,0))
-            screen.blit(overlay,(0,0))
-            screen.blit(big_font.render("VICTORY!",True,(255,255,0)),(WIDTH//2-150,HEIGHT//2-100))
-            next_btn = Button(WIDTH//2-80, HEIGHT//2,160,60,"Next Floor")
-            next_btn.draw()
+                # Exit
+                if exit_button.clicked(mouse):
+                    pygame.quit()
+                    sys.exit()
 
-        pygame.display.flip()
+                # End Turn
+                if end_button.clicked(mouse):
+                    for e in enemies:
+                        e.act(player)
+                    player.discard_hand()
+                    player.start_turn()
+                    player.draw_hand(5)
+                    for e in enemies:
+                        e.choose_intent()
+                    card_uis = [CardUI(c) for c in player.hand]
+                    continue
+
+                # Card Selection
+                for card in card_uis:
+                    if card.rect.collidepoint(mouse):
+                        c = card.card
+                        if player.energy < c.cost:
+                            break
+                        if c.block>0:
+                            player.block += c.block
+                            player.energy -= c.cost
+                            player.hand.remove(c)
+                            player.deck.discard_card(c)
+                            card_uis.remove(card)
+                        elif c.heal>0:
+                            player.hp = min(player.max_hp, player.hp + c.heal)
+                            player.energy -= c.cost
+                            player.hand.remove(c)
+                            player.deck.discard_card(c)
+                            card_uis.remove(card)
+                        elif c.attack>0:
+                            selected_card_ui = card
+                            card.selected = True
+
+                # Attack Enemy
+                for enemy_ui in enemy_uis:
+                    if enemy_ui.rect.collidepoint(mouse) and selected_card_ui:
+                        c = selected_card_ui.card
+                        if player.energy >= c.cost:
+                            enemy_ui.enemy.hp -= c.attack
+                            player.energy -= c.cost
+                            enemy_ui.flash = 10
+                            player.hand.remove(c)
+                            player.deck.discard_card(c)
+                            card_uis.remove(selected_card_ui)
+                            selected_card_ui = None
+
+        pygame.display.update()
         clock.tick(60)

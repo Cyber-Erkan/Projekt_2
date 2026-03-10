@@ -63,7 +63,7 @@ def start_screen():
                     for e in enemies:
                         e.max_hp = e.hp  # för UI
 
-                    run_pygame_game(player, enemies)
+                    run_pygame_game()
                 if exit_btn.is_clicked(mouse):
                     pygame.quit()
                     sys.exit()
@@ -73,6 +73,10 @@ def start_screen():
         pygame.display.flip()
         clock.tick(60)
 
+def start_screen_fullscreen():
+    pygame.display.set_mode((0,0), pygame.FULLSCREEN)
+    start_screen()
 
 if __name__ == "__main__":
-    start_screen()
+    start_screen_fullscreen()
+    run_pygame_game()
