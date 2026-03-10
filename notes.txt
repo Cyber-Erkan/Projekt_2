@@ -1,11 +1,9 @@
-kolla igenom block
-göra en try-loop för att välja enemy
-kolla igenom enemy intent (verkar vara broken)
-fixa egna enemies
-fixa energy system
-ha en try-loop när man ska starta om
+Konown Issues:
 
 
+Future Features:
 
+
+Info:
 pygame:  py -m pip install -U pygame --user
 Launch: python ui.py
