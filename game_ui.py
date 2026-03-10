@@ -364,7 +364,10 @@ def run_pygame_game():
                     player.draw_hand(5)
 
                     for e in enemies:
-                        e.choose_intent()
+                        if e.is_alive():
+                            e.choose_intent()
+                        else:
+                            e.intent = None
 
                     card_uis = [CardUI(c) for c in player.hand]
 
