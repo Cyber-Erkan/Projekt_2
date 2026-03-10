@@ -2,22 +2,23 @@ Konown Issues:
 
 
 
-
+----------------
 Future Features:
-
+-----
 Funktionalitet:
 Mer Enemy types
 Olika kort
 Bossar
 artifacts
 Nya floors
-
+-----
 UI:
 bakgrunder
-Enemy sprites
+Enemy sprites - temporärt fixat
 Select kort
 Visa HP
-
+----------------
 Info:
 pygame:  py -m pip install -U pygame --user
 Launch: python ui.py
+----------------
