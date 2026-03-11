@@ -1,6 +1,8 @@
 Konown Issues:
-
-
+-----
+Bugged as frick:
+kan inte välja enemies
+block attackerar ibland
 
 ----------------
 Future Features:

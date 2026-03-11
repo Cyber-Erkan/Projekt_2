@@ -66,10 +66,13 @@ class Player:
         if not self.can_play(card):
             return False
 
-        enemy.hp -= card.attack
+        enemy.take_damage(card.attack)
+
         self.energy -= card.cost
 
-        self.hand.remove(card)
+        if card in self.hand:
+            self.hand.remove(card)
+
         self.deck.discard_card(card)
 
         return True

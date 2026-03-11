@@ -19,6 +19,62 @@ clock = pygame.time.Clock()
 
 ENEMY_SIZE = (128,128)
 
+# ---------------- DAMAGE NUMBERS ----------------
+
+class DamageNumber:
+
+    def __init__(self,x,y,value,color=(255,80,80)):
+
+        self.x = x
+        self.y = y
+
+        self.value = value
+        self.color = color
+
+        self.timer = 60
+
+    def update(self):
+
+        self.y -= 1
+        self.timer -= 1
+
+    def draw(self):
+
+        text = font.render(str(self.value),True,self.color)
+        screen.blit(text,(self.x,self.y))
+
+    def alive(self):
+
+        return self.timer > 0
+    
+# ---------------- SLASH EFFECT ----------------
+class SlashEffect:
+
+    def __init__(self,x,y):
+
+        self.x = x
+        self.y = y
+        self.timer = 12
+
+    def update(self):
+
+        self.timer -= 1
+
+    def draw(self):
+
+        size = 60 - self.timer*4
+
+        pygame.draw.line(
+            screen,
+            (255,255,255),
+            (self.x-size,self.y-size),
+            (self.x+size,self.y+size),
+            6
+        )
+
+    def alive(self):
+
+        return self.timer > 0
 
 # ---------------- BUTTON ----------------
 
@@ -117,6 +173,8 @@ class EnemyUI:
 
     def __init__(self,enemy,x,y):
 
+        self.base_x = x
+
         self.enemy = enemy
 
         self.rect = pygame.Rect(x,y,128,128)
@@ -160,10 +218,13 @@ class EnemyUI:
         pygame.draw.rect(screen,(255,0,0),(self.rect.x,self.rect.y-20,120,10))
         pygame.draw.rect(screen,(0,255,0),(self.rect.x,self.rect.y-20,120*ratio,10))
 
-        # NAME
+        hp_text = font.render(
+            f"{max(0,self.enemy.hp)} / {self.enemy.max_hp}",
+            True,
+            (255,255,255)
+            )
 
-        name = font.render(self.enemy.name,True,(255,255,255))
-        screen.blit(name,(self.rect.x,self.rect.y+40))
+        screen.blit(hp_text,(self.rect.x,self.rect.y-40))
 
         # INTENT
 
@@ -182,6 +243,25 @@ class EnemyUI:
             intent = font.render(text,True,(255,255,0))
 
             screen.blit(intent,(self.rect.x,self.rect.y-45))
+
+    def update(self):
+        
+        if self.enemy.death_anim > 0:
+
+            self.rect.y += 2
+            self.enemy.death_anim -= 1
+
+        if self.enemy.attack_anim > 0:
+
+            offset = 20 if self.enemy.attack_anim > 10 else -20
+
+            self.rect.x = self.base_x + offset
+
+            self.enemy.attack_anim -= 1
+
+        else:
+
+            self.rect.x = self.base_x
 
 
 
@@ -308,11 +388,15 @@ def run_pygame_game():
             EnemyUI(e, start_x + i*spacing, 200)
         )
 
+    damage_numbers = []
+    slash_effects = []
+
     end_button = Button(WIDTH-200,HEIGHT-100,150,50,"END TURN")
     exit_button = Button(WIDTH-140,20,120,40,"EXIT")
     menu_button = Button(WIDTH/2-120,HEIGHT/2,240,70,"MAIN MENU")
 
     selected_card_ui = None
+
 
     running = True
 
@@ -388,7 +472,14 @@ def run_pygame_game():
         # DRAW ENEMIES
 
         for e in enemy_uis:
+            e.update()
             e.draw()
+        
+        for d in damage_numbers:
+            d.update()
+            d.draw()
+
+        damage_numbers = [d for d in damage_numbers if d.alive()]
         
         draw_player_ui(player)
 
@@ -422,8 +513,21 @@ def run_pygame_game():
 
                 if end_button.clicked(mouse):
 
-                    for e in enemies:
-                        e.act(player)
+                    for i,e in enumerate(enemies):
+
+                        damage = e.act(player)
+
+                        if damage:
+                            damage_numbers.append(
+                                DamageNumber(120, HEIGHT-120, damage)
+                            )
+
+                        for s in slash_effects:
+
+                            s.update()
+                            s.draw()
+
+                        slash_effects = [s for s in slash_effects if s.alive()]
 
                     player.discard_hand()
 
@@ -440,6 +544,8 @@ def run_pygame_game():
 
                     selected_card_ui = None
 
+
+
                     continue
                 
                 # PLAY CARDS
@@ -454,13 +560,15 @@ def run_pygame_game():
 
                             if player.play_block(c):
 
-                                card_uis.remove(card)
+                                if card in card_uis:
+                                    card_uis.remove(card)
 
                         elif c.is_heal():
 
                             if player.play_heal(c):
 
-                                card_uis.remove(card)
+                                if card in card_uis:
+                                    card_uis.remove(card)
 
                         elif c.is_attack():
 
@@ -475,13 +583,27 @@ def run_pygame_game():
 
                         c = selected_card_ui.card
 
-                        if player.play_attack(c,enemy_ui.enemy):
+                if player.play_attack(c,enemy_ui.enemy):
 
-                            enemy_ui.flash = 10
+                    enemy_ui.flash = 10
 
-                            card_uis.remove(selected_card_ui)
+                    # DAMAGE NUMBER
+                    damage_numbers.append(
+                        DamageNumber(enemy_ui.rect.centerx, enemy_ui.rect.y, c.attack)
+                    )
 
-                            selected_card_ui = None
+                    # SLASH EFFECT
+                    slash_effects.append(
+                        SlashEffect(enemy_ui.rect.centerx, enemy_ui.rect.centery)
+                    )
+
+                    if selected_card_ui in card_uis:
+                        card_uis.remove(selected_card_ui)
+
+                    selected_card_ui = None
+                    for c in card_uis:
+                        c.selected = False
+        
 
         pygame.display.update()
         clock.tick(60)

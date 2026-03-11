@@ -10,10 +10,20 @@ class Enemy:
         self.max_hp = hp
         self.attack = attack
         self.intent = None
+        self.attack_anim = 0
+        self.death_anim = 0
 
     def is_alive(self):
 
         return self.hp > 0
+    
+    def take_damage(self, amount):
+
+        self.hp -= amount
+
+        if self.hp <= 0:
+            self.hp = 0
+            self.death_anim = 40
 
     def choose_intent(self):
 
@@ -35,6 +45,8 @@ class Enemy:
         action, value = self.intent
 
         if action == "attack":
+
+            self.attack_anim = 20
 
             blocked = min(player.block,value)
 
