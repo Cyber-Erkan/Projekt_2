@@ -257,6 +257,12 @@ def run_game():
                     card_uis = [CardUI(c) for c in player.hand]
                     for e in enemies:
                         if e.is_alive(): e.choose_intent()
+                    if all_enemies_dead(enemies):
+                        stage += 1
+                        enemies = start_next_stage(stage)
+                        enemy_uis = [EnemyUI(e, WIDTH/2 + (i-len(enemies)/2)*200, 200) for i,e in enumerate(enemies)]
+                    for e in enemies:
+                        if e.is_alive(): e.choose_intent()
                     continue
 
                 for card in card_uis:
