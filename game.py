@@ -6,6 +6,7 @@ from cards.deck import Deck
 from entities.player import Player
 from entities.enemy import Enemy
 
+# import Button
 from effects.slash import SlashEffect
 from effects.damage_numbers import DamageNumber
 
@@ -21,6 +22,20 @@ clock = pygame.time.Clock()
 
 ENEMY_SIZE = (128,128)
 
+# ---------------- BUTTON ----------------
+class Button:
+    def __init__(self, x, y, w, h, text):
+        self.rect = pygame.Rect(x, y, w, h)
+        self.text = text
+
+    def draw(self):
+        pygame.draw.rect(screen, (70,70,70), self.rect)
+        pygame.draw.rect(screen, (255,255,255), self.rect, 3)
+        text = font.render(self.text, True, (255,255,255))
+        screen.blit(text, text.get_rect(center=self.rect.center))
+
+    def clicked(self, pos):
+        return self.rect.collidepoint(pos)
 
 # ---------------- CARD UI ----------------
 class CardUI:
@@ -182,8 +197,8 @@ def run_game():
 
     dragging_card = None
 
-    end_turn_btn = pygame.Rect(WIDTH-200, HEIGHT-100, 150,50)
-    exit_btn = pygame.Rect(WIDTH-140, 20, 120,40)
+    end_turn_btn = Button(WIDTH-200, HEIGHT-100, 150,50, "End Turn")
+    exit_btn = Button(WIDTH-140, 20, 120,40, "Exit")
 
     running = True
     while running:
@@ -232,11 +247,9 @@ def run_game():
         draw_player_ui(player)
 
         # Draw buttons
-        pygame.draw.rect(screen,(220,220,220),end_turn_btn)
-        pygame.draw.rect(screen,(0,0,0),end_turn_btn,2)
-        pygame.draw.rect(screen,(220,220,220),exit_btn)
-        pygame.draw.rect(screen,(0,0,0),exit_btn,2)
-
+        end_turn_btn.draw()
+        exit_btn.draw()
+        
         # Events
         for event in pygame.event.get():
             if event.type == pygame.QUIT: sys.exit()
