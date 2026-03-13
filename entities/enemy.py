@@ -26,16 +26,20 @@ class Enemy:
             self.death_anim = 40
 
     def choose_intent(self):
+        if not self.is_alive():
+            self.intent = None
+            return
+        else:
 
-        action = random.choice(["attack","buff"])
+            action = random.choice(["attack","buff"])
 
-        if action == "attack":
+            if action == "attack":
 
-            self.intent = ("attack", self.attack)
+                self.intent = ("attack", self.attack)
 
-        if action == "buff":
+            if action == "buff":
 
-            self.intent = ("buff",2)
+                self.intent = ("buff",2)
 
     def act(self, player):
 

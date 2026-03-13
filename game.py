@@ -174,7 +174,7 @@ def run_game():
     player.draw_hand(5)
 
     enemy_uis = [EnemyUI(e, WIDTH/2 + (i-len(enemies)/2)*200, 200) for i,e in enumerate(enemies)]
-    for e in enemies:   e.choose_intent()
+    for e in enemies:e.choose_intent()
 
     card_uis = [CardUI(c) for c in player.hand]
     damage_numbers = []
@@ -263,9 +263,7 @@ def run_game():
                         stage += 1
                         enemies = start_next_stage(stage)
                         enemy_uis = [EnemyUI(e, WIDTH/2 + (i-len(enemies)/2)*200, 200) for i,e in enumerate(enemies)]
-                    for e in enemies:
-                        if e.is_alive(): e.choose_intent()
-                    continue
+                    for e in enemies: e.choose_intent()
 
                 for card in card_uis:
                     if card.rect.collidepoint(mouse):
