@@ -2,11 +2,12 @@ import pygame
 import sys
 import math
 
+
 from cards.deck import Deck
 from entities.player import Player
 from entities.enemy import Enemy
 
-# import Button
+
 from effects.slash import SlashEffect
 from effects.damage_numbers import DamageNumber
 
@@ -199,6 +200,9 @@ def run_game():
 
     end_turn_btn = Button(WIDTH-200, HEIGHT-100, 150,50, "End Turn")
     exit_btn = Button(WIDTH-140, 20, 120,40, "Exit")
+    retry_btn = Button(WIDTH // 2 - 150, HEIGHT // 2 + 50, 300, 80, "retry")
+
+    over_text = big_font.render("GAME OVER",True,(255,0,0))
 
     running = True
     while running:
@@ -211,105 +215,108 @@ def run_game():
 
         # Check game over
         if player.hp <= 0:
-            over_text = big_font.render("GAME OVER",True,(255,0,0))
             screen.blit(over_text,(WIDTH/2-200,HEIGHT/2-150))
+            retry_btn.draw()
             pygame.display.update()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if retry_btn.clicked(mouse): 
+                    return
+                    # for event in pygame.event.get(): 
+                        # if event.type == pygame.QUIT: sys.exit()
+                        # if event.type == pygame.MOUSEBUTTONDOWN: sys.exit()
+        else:
+
+            # Layout hand
+            layout_hand(card_uis)
+
+            # Draw cards
+            for card in card_uis:
+                if card==dragging_card:
+                    card.x = mouse[0]-60
+                    card.y = mouse[1]-80
+                else:
+                    if card.rect.collidepoint(mouse): card.target_y -= 40
+                    card.update()
+                card.draw()
+
+            # Draw enemies
+            for e in enemy_uis:
+                e.update()
+                e.draw()
+
+            # Draw effects
+            for d in damage_numbers: d.update(); d.draw(screen,font)
+            damage_numbers = [d for d in damage_numbers if d.alive()]
+            for s in slash_effects: s.update(); s.draw(screen)
+            slash_effects = [s for s in slash_effects if s.alive()]
+
+            # Draw player UI
+            draw_player_ui(player)
+
+            # Draw buttons
+            end_turn_btn.draw()
+            exit_btn.draw()
+
+            # Events
             for event in pygame.event.get():
                 if event.type == pygame.QUIT: sys.exit()
-                if event.type == pygame.MOUSEBUTTONDOWN: sys.exit()
-            continue
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE: sys.exit()
 
-        # Layout hand
-        layout_hand(card_uis)
+                # Mouse down
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if exit_btn.clicked(mouse): sys.exit()
+                    if end_turn_btn.clicked(mouse):
+                        # End turn
+                        for e in enemies:
+                            e.act(player)
+                            e.attack_anim = 20
+                            damage_numbers.append(DamageNumber(WIDTH//2, HEIGHT-120, 0))
+                        player.discard_hand()
+                        player.start_turn()
+                        player.draw_hand(5)
+                        card_uis = [CardUI(c) for c in player.hand]
+                        for e in enemies:
+                            if e.is_alive(): e.choose_intent()
+                        else:
+                            e.intent = None
+                        if all_enemies_dead(enemies):
+                            stage += 1
+                            enemies = start_next_stage(stage)
+                            enemy_uis = [EnemyUI(e, WIDTH/2 + (i-len(enemies)/2)*200, 200) for i,e in enumerate(enemies)]
+                        for e in enemies: e.choose_intent()
 
-        # Draw cards
-        for card in card_uis:
-            if card==dragging_card:
-                card.x = mouse[0]-60
-                card.y = mouse[1]-80
-            else:
-                if card.rect.collidepoint(mouse): card.target_y -= 40
-                card.update()
-            card.draw()
+                    for card in card_uis:
+                        if card.rect.collidepoint(mouse):
+                            dragging_card = card
+                            card.selected = True
+                            break
 
-        # Draw enemies
-        for e in enemy_uis:
-            e.update()
-            e.draw()
+                # Mouse up
+                if event.type == pygame.MOUSEBUTTONUP and dragging_card:
+                    c = dragging_card.card
+                    played = False
+                    # Attack
+                    if c.is_attack():
+                        for enemy_ui in enemy_uis:
+                            if enemy_ui.rect.collidepoint(mouse) and enemy_ui.enemy.is_alive():
+                                if player.play_attack(c, enemy_ui.enemy):
+                                    enemy_ui.flash = 10
+                                    slash_effects.append(SlashEffect(enemy_ui.rect.centerx, enemy_ui.rect.centery))
+                                    damage_numbers.append(DamageNumber(enemy_ui.rect.centerx, enemy_ui.rect.y, c.attack))
+                                    played = True
+                                    break
+                    # Block
+                    elif c.is_block():
+                        if player.play_block(c): played = True
+                    # Heal
+                    elif c.is_heal():
+                        if player.play_heal(c): played = True
 
-        # Draw effects
-        for d in damage_numbers: d.update(); d.draw(screen,font)
-        damage_numbers = [d for d in damage_numbers if d.alive()]
-        for s in slash_effects: s.update(); s.draw(screen)
-        slash_effects = [s for s in slash_effects if s.alive()]
+                    if played and dragging_card in card_uis:
+                        card_uis.remove(dragging_card)
 
-        # Draw player UI
-        draw_player_ui(player)
-
-        # Draw buttons
-        end_turn_btn.draw()
-        exit_btn.draw()
-        
-        # Events
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT: sys.exit()
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE: sys.exit()
-
-            # Mouse down
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if exit_btn.collidepoint(mouse): sys.exit()
-                if end_turn_btn.collidepoint(mouse):
-                    # End turn
-                    for e in enemies:
-                        e.act(player)
-                        e.attack_anim = 20
-                        damage_numbers.append(DamageNumber(WIDTH//2, HEIGHT-120, 0))
-                    player.discard_hand()
-                    player.start_turn()
-                    player.draw_hand(5)
-                    card_uis = [CardUI(c) for c in player.hand]
-                    for e in enemies:
-                        if e.is_alive(): e.choose_intent()
-                    else:
-                        e.intent = None
-                    if all_enemies_dead(enemies):
-                        stage += 1
-                        enemies = start_next_stage(stage)
-                        enemy_uis = [EnemyUI(e, WIDTH/2 + (i-len(enemies)/2)*200, 200) for i,e in enumerate(enemies)]
-                    for e in enemies: e.choose_intent()
-
-                for card in card_uis:
-                    if card.rect.collidepoint(mouse):
-                        dragging_card = card
-                        card.selected = True
-                        break
-
-            # Mouse up
-            if event.type == pygame.MOUSEBUTTONUP and dragging_card:
-                c = dragging_card.card
-                played = False
-                # Attack
-                if c.is_attack():
-                    for enemy_ui in enemy_uis:
-                        if enemy_ui.rect.collidepoint(mouse) and enemy_ui.enemy.is_alive():
-                            if player.play_attack(c, enemy_ui.enemy):
-                                enemy_ui.flash = 10
-                                slash_effects.append(SlashEffect(enemy_ui.rect.centerx, enemy_ui.rect.centery))
-                                damage_numbers.append(DamageNumber(enemy_ui.rect.centerx, enemy_ui.rect.y, c.attack))
-                                played = True
-                                break
-                # Block
-                elif c.is_block():
-                    if player.play_block(c): played = True
-                # Heal
-                elif c.is_heal():
-                    if player.play_heal(c): played = True
-
-                if played and dragging_card in card_uis:
-                    card_uis.remove(dragging_card)
-
-                dragging_card.selected = False
-                dragging_card = None
+                    dragging_card.selected = False
+                    dragging_card = None
 
         pygame.display.update()
         clock.tick(60)
