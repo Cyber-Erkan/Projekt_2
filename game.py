@@ -214,23 +214,35 @@ def run_game():
         screen.blit(stage_text,(WIDTH/2-50,30))
 
         # Check game over
+# ---------------- GAME OVER ----------------
         if player.hp <= 0:
-            screen.blit(over_text,(WIDTH/2-200,HEIGHT/2-150))
-            retry_btn.draw()
-            pygame.display.update()
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if retry_btn.clicked(mouse): 
-                    return
-                    # for event in pygame.event.get(): 
-                        # if event.type == pygame.QUIT: sys.exit()
-                        # if event.type == pygame.MOUSEBUTTONDOWN: sys.exit()
-        else:
+
+                screen.blit(over_text,(WIDTH/2-200,HEIGHT/2-150))
+                retry_btn.draw()
+
+                for event in pygame.event.get():
+
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+
+                    if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                        pygame.quit()
+                        sys.exit()
+
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        if retry_btn.clicked(event.pos):
+                            return
+
+                pygame.display.update()
+                clock.tick(60)
+                continue
 
             # Layout hand
-            layout_hand(card_uis)
+        layout_hand(card_uis)
 
             # Draw cards
-            for card in card_uis:
+        for card in card_uis:
                 if card==dragging_card:
                     card.x = mouse[0]-60
                     card.y = mouse[1]-80
@@ -240,25 +252,25 @@ def run_game():
                 card.draw()
 
             # Draw enemies
-            for e in enemy_uis:
+        for e in enemy_uis:
                 e.update()
                 e.draw()
 
             # Draw effects
-            for d in damage_numbers: d.update(); d.draw(screen,font)
-            damage_numbers = [d for d in damage_numbers if d.alive()]
-            for s in slash_effects: s.update(); s.draw(screen)
-            slash_effects = [s for s in slash_effects if s.alive()]
+        for d in damage_numbers: d.update(); d.draw(screen,font)
+        damage_numbers = [d for d in damage_numbers if d.alive()]
+        for s in slash_effects: s.update(); s.draw(screen)
+        slash_effects = [s for s in slash_effects if s.alive()]
 
             # Draw player UI
-            draw_player_ui(player)
+        draw_player_ui(player)
 
             # Draw buttons
-            end_turn_btn.draw()
-            exit_btn.draw()
+        end_turn_btn.draw()
+        exit_btn.draw()
 
             # Events
-            for event in pygame.event.get():
+        for event in pygame.event.get():
                 if event.type == pygame.QUIT: sys.exit()
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE: sys.exit()
 
