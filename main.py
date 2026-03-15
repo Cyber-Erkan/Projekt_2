@@ -1,6 +1,21 @@
 import pygame
-import ui  # vår startskärm
+from ui import start_screen
+from game import run_game
 
-if __name__ == "__main__":
-    pygame.init()
-    ui.start_screen_fullscreen()
+pygame.init()
+
+running = True
+
+while running:
+
+    action = start_screen()
+
+    if action == "start":
+        run_game()
+
+    elif action == "exit":
+        running = False
+
+pygame.quit()
+
+
