@@ -2,6 +2,7 @@ import pygame
 import sys
 import math
 
+from entities.enemies import Goblin, Slime
 from cards.deck import Deck
 from entities.player import Player
 from entities.enemy import Enemy
@@ -154,15 +155,18 @@ def all_enemies_dead(enemies):
     return all(not e.is_alive() for e in enemies)
 
 def start_next_stage(stage):
-    if stage==1:
-        enemies = [Enemy("Goblin",20,5), Enemy("Slime",15,4)]
-    elif stage==2:
-        enemies = [Enemy("Goblin",25,6), Enemy("Goblin",25,6)]
-    elif stage==3:
-        enemies = [Enemy("Slime",35,8)]
+
+    if stage == 1:
+        return [Goblin(), Slime()]
+
+    elif stage == 2:
+        return [Goblin(), Goblin()]
+
+    elif stage == 3:
+        return [Slime()]
+
     else:
-        enemies = [Enemy("Goblin",30,7), Enemy("Slime",30,7)]
-    return enemies
+        return [Goblin(), Slime()]
 
 
 # ---------------- GAME LOOP ----------------
