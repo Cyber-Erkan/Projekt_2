@@ -1,6 +1,12 @@
 import random
-from cards.cards import Card
-
+from cards.card import (
+    attack_card,
+    defend_card,
+    heal_card,
+    big_attack_card,
+    big_defend_card,
+    big_heal_card
+)
 
 class Deck:
 
@@ -57,14 +63,18 @@ class Deck:
         cards = []
 
         for _ in range(5):
-            cards.append(Card("Attack", attack=6, cost=1))
+            cards.append(attack_card())
 
         for _ in range(5):
-            cards.append(Card("Block", block=5, cost=1))
+            cards.append(defend_card())
 
-        cards.append(Card("Heal", heal=4, cost=1))
+        cards.append(heal_card())
 
-        deck = Deck(cards)
+        cards.append(big_attack_card())
+        cards.append(big_defend_card())
+        cards.append(big_heal_card())
+
+        deck = Deck.create_starting_deck()
         deck.shuffle()
 
         return deck
