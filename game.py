@@ -18,7 +18,7 @@ pygame.init()
 screen = pygame.display.set_mode((0,0), pygame.FULLSCREEN)
 WIDTH, HEIGHT = screen.get_size()
 
-font = pygame.font.SysFont("arial", 24)
+font = pygame.font.SysFont("arial", 18)
 big_font = pygame.font.SysFont("arial", 70)
 clock = pygame.time.Clock()
 
@@ -216,7 +216,7 @@ def run_game():
         stage_text = font.render(f"Stage {stage}", True,(255,255,255))
         screen.blit(stage_text,(WIDTH/2-50,30))
 
-        # Check game over
+
 # ---------------- GAME OVER ----------------
         if player.hp <= 0:
 
