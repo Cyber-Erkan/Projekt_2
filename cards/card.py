@@ -14,12 +14,12 @@ def heal_card():
 
 
 def big_attack_card():
-    return Card("Big Attack", attack=12, cost=2)
+    return Card("Attack +", attack=12, cost=2)
 
 
 def big_defend_card():
-    return Card("Big Defend", block=10, cost=2)
+    return Card("Defend +", block=10, cost=2)
 
 
 def big_heal_card():
-    return Card("Big Heal", heal=8, cost=2)
+    return Card("Heal +", heal=8, cost=2)

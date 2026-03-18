@@ -171,7 +171,6 @@ def all_enemies_dead(enemies):
     return all(not e.is_alive() for e in enemies)
 
 def start_next_stage(stage):
-
     if stage == 1:
         return [Goblin(), Slime()]
 
@@ -336,7 +335,3 @@ def run_game():
 
         pygame.display.update()
         clock.tick(60)
-
-if __name__ == "__main__":
-    while True:
-        run_game()

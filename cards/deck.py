@@ -74,7 +74,7 @@ class Deck:
         cards.append(big_defend_card())
         cards.append(big_heal_card())
 
-        deck = Deck.create_starting_deck()
+        deck = Deck(cards)
         deck.shuffle()
 
         return deck
