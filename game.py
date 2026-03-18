@@ -284,7 +284,6 @@ def run_game():
                         # End turn
                         for e in enemies:
                             e.act(player)
-                            e.attack_anim = 20
                             damage_numbers.append(DamageNumber(WIDTH//2, HEIGHT-120, 0))
                         player.discard_hand()
                         player.start_turn()
