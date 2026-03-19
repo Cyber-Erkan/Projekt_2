@@ -11,6 +11,7 @@ Mer Enemy types
 Olika kort
 Bossar
 artifacts
+Tutorial knapp som visar skärm för tutorial
 Nya floors
 -----
 UI:
@@ -18,6 +19,8 @@ bakgrunder
 Enemy sprites - temporärt fixat
 Select kort
 Visa HP
+"All Clear" Visas efter attack om alla enemies är döda
+Visa visuellt hur mycket block man har
 fixa symbol för energi
 ----------------
 Info:
